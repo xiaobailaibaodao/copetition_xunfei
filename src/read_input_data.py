@@ -17,7 +17,6 @@ class Read:
     normal_p = {"峰": 1.0621,"平": 0.6272, "谷": 0.267}
     specail_high_p = 1.1252
     demand_price = 40
-    max_power_resource = 5000
 
     def __init__(self,input_data_file):
         self.read_from_excel(input_data_file)
