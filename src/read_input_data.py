@@ -24,7 +24,7 @@ class Read:
 
     def read_from_excel(self,input_data_file):
         # 从Excel读取输入数据
-        self.power_df,device_df,price_df = pd.read_excel(input_data_file,sheet_name=[0,1,2],converters={'dtime':pd.Timestamp}).values()   # sheet_name = [多个sheet] 返回的字典
+        self.power_df,device_df,price_df = pd.read_excel(input_data_file,sheet_name=[0,1,2]).values()   # sheet_name = [多个sheet] 返回的字典
 
         # 设备信息
         for index,row in device_df.iterrows():
@@ -34,11 +34,8 @@ class Read:
                 self.system_a = ObjSystem(row['device_name'],row['Is_stor'],row['norm_power'],row['Is_need'])
 
         # 每天每个时段功率数据
-        self.power_df = self.power_df.sort_values(by=['dtime'])
+        # self.power_df = self.power_df.sort_values(by=['dtime'])
         print("测试数据总量: ",len(self.power_df))
-
-
-        print("success!")
 
 
     def per_kw_price(self,date):

@@ -23,7 +23,18 @@ def check_algo_result(result_list,sys_a_act_power_dict,sys_b_act_power_dict):
     pass
 
 
+def draw_gante_picture(df):
+    # 将结果通过甘特图展示，发现优化点
+    pass
+
+
 if __name__ == "__main__":
-    for i in range(3,5):
-        print(i)
+
+    input_data_file = '../input/基于柔性负荷任务的需量优化策略挑战赛公开数据/【算法题数据集】基于柔性负荷任务的需量优化策略挑战赛.xlsx'
+    power_df = pd.read_excel(input_data_file)  # sheet_name = [多个sheet] 返回的字典
+    power_df['date'] = power_df['dtime'].apply(lambda x: str(x).split()[0])
+    sample_instance = power_df[power_df['date']=='2022-01-01']
+
+    draw_gante_picture(sample_instance)
+
 

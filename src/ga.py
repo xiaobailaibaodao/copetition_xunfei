@@ -9,6 +9,9 @@ import sys
 
 import numpy as np
 import random
+
+import pandas as pd
+
 from tool import Tool
 
 class GA:
@@ -16,43 +19,45 @@ class GA:
         遗传算法，尝试使用geatpy
     '''
 
-    def __init__(self,sub_instance,sys_a_act_power,sys_b_act_power,pre_day_plan=''):
+    def __init__(self,sub_instance,sys_a_act_power,sys_b_act_power,origin_data):
         '''
         :param sub_instance: 某天的回路功率数据
-        :param pre_day_plan: 前一天计划 (如果为空，则表示不允许跨天)
         '''
         self.instance = sub_instance
         self.sys_a_act_power = sys_a_act_power
         self.sys_b_act_power = sys_b_act_power
+        self.origin_data = origin_data
         self.max_power_resource = 5000             # 最大功率上限
         self.seed = 1
-        self.norm_a_finished = False
-        self.norm_b_finished = False
+        # self.norm_a_finished = False
+        # self.norm_b_finished = False
 
-        self.pre_day_plan = pre_day_plan
         # self.population = np.zeros((len(),len()),dtype=int)
         # 每个个体 二维数组[[系统A],[系统B]] 一组解
 
 
     def solver(self):
         # 启发式优化
-        self.initial_solution1()
+        chrom = self.initial_solution1()
 
+        format_result = self.format_result_type(chrom)
+        return format_result
 
     # 初始解
     def initial_solution1(self):
         # 构造初始解 - 测试思路是否正确
-        print("构造初始解，不允许跨天操作")
-        chrom = np.zeros((3,len(self.instance)),dtype=int)      # 创建一个个体，表示系统A和B功率情况 以及可用资源剩余;
+        chrom = np.zeros((3,len(self.instance)),dtype=float)      # 创建一个个体，表示系统A和B功率情况 以及可用资源剩余;
         chrom[0] = self.max_power_resource
 
-        # 优先安排系统A额定功率 （或者安排系统B 或者取两者较大值）
-        candidate_position = Tool.identify_useful_position(chrom,1)
+        # step1 先指定额定功率的节点位置,初始状态肯定满足
+        # 优先安排系统B 额定功率
+        current_p = Tool.greed_distribute_resource(chrom,2,self.sys_b_act_power,self.origin_data.system_b.norm_power,0)
 
+        # 系统A
+        Tool.greed_distribute_resource(chrom,1,self.sys_a_act_power,self.origin_data.system_a.norm_power,current_p)  # todo 没选择谷时段
 
-        # step1 先指定额定功率的节点位置
-        # step2 普通功率(也可能会包含额定功率)
-
+        print("初始解构造完成...")
+        return chrom
 
 
     # todo 如果是系统B进行充电，则不影响系统A使用
@@ -87,31 +92,6 @@ class GA:
         return start_position,end_position
 
 
-    def upadate_resources(self,chrom,start_p,end_p,sub_power,sys_type):
-        '''
-        :param start_p: 起始位置
-        :param end_p: 结束位置
-        :param sub_power: 需要分配资源
-        :param sys_type: 柔性系统类型
-        :return:
-        '''
-        update_points_list = []
-        for i in range(start_p,end_p+1):
-            if chrom[sys_type,i] == self.instance.system_a.norm_power:
-                continue
-            update_points_list.append(i)
-
-        # 分配每个位置更新资源数量
-        if sub_power == 0:
-            aver_power = 0.0001
-        if len(update_points_list) == 0:
-            aver_power = 0
-        else:
-            aver_power = sub_power / len(sub_power)
-
-        chrom[sys_type,update_points_list] = aver_power
-
-
 
     # 进化
 
@@ -121,11 +101,21 @@ class GA:
 
     def evalue_score(self):
         # 调控后得分 - 即目标函数
+        # TODO 整体目标变化
         pass
 
 
     def calculate_total_cost(self):
         # 计算产生 总电费 = 电量电费 + 需量电费
         # 电量电费 = 峰平谷各段时间电费之和
+
         # 需量电费 = 最高功率 * 单位需量电价
+        # 需要电费 受 月维度数据影响
         pass
+
+
+    def format_result_type(self,chrom):
+        # 格式化结果
+        result_dict = {"dtime":list(self.instance['dtime']),"all_power_plan":[5000]*len(self.instance),"a_test_power_plan":list(chrom[1]),"b_test_power_plan":list(chrom[2])}
+        result = pd.DataFrame.from_dict(result_dict,orient='index').T
+        return result
